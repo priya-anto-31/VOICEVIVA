@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Generator</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="start-container">
+        <button id="startButton">
+            <i class="fa-regular fa-circle-play fa-7x"></i>
+        </button>
+    </div>
+    <div class="title" style="display: none;">
+        <span id="questionNumber"></span>
+        <h1>Data Structures Question</h1>
+        <span id="timer"></span>
+    </div>
+    <div class="question-container" style="display: none;">
+        <h1 id="question"></h1>
+        <div class="blk">
+            <label for="userAnswer">Your Answer:</label>
+            <textarea id="userAnswer"></textarea>
+            <div class="btn-container">
+                <button id="recordButton">Record Answer</button>
+            </div>
+        </div>
+        <div id="feedback"></div>
+        <button id="nextButton">
+            <i class="fas fa-forward fa-2x"></i>
+        </button>
+        <div id="feedbackPopup" class="feedback-popup">
+            <div class="feedback-popup-content">
+                <span class="close">&times;</span>
+                <div id="feedbackPopupContent"></div>
+            </div>
+        </div>
+
+    </div>
+    <audio id="questionAudio" autoplay></audio>
+    <div id="otherfeedback" style="display: none;"></div>
+    <div id="endPage" style="display: none;">
+        <h1>Quiz Completed!</h1>
+        <h2>Your Final Score: <span id="finalScore"></span>/25</h2>
+        <h2>Total Time Taken: <span id="totalTime"></span></h2>
+        <p id="personalizedFeedback"></p>
+        <a href="/leaderBoard">view leaderboard</a>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBC-d0YRmnxCtHSb3qV0_mDAPtOuN4gkU8",
+            authDomain: "voiceviva-dadb1.firebaseapp.com",
+            databaseURL: "https://voiceviva-dadb1-default-rtdb.firebaseio.com",
+            projectId: "voiceviva-dadb1",
+            storageBucket: "voiceviva-dadb1.appspot.com",
+            messagingSenderId: "418785472414",
+            appId: "1:418785472414:web:410bfaefd6328cfc15708f"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+
+        import { getDatabase, set, get, query, update, remove, ref, child, orderByChild }
+            from "https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js"
+
+        const db = getDatabase();
+        let questionIndex = 1;
+        let startTime = Date.now();
+        let score=[];
+        let k=0;
+        let str=['arrays','linked lists','stacks and queues','trees and graphs','hashing and heaps']
+        let improve=[];
+        let t=0;
+
+        var startButton = document.querySelector("#startButton");
+        startButton.addEventListener('click', startTest);
+
+        var nextButton = document.querySelector("#nextButton");
+        nextButton.addEventListener('click', nextQuestion);
+
+        var recordButton = document.querySelector("#recordButton");
+        recordButton.addEventListener('click', recordAnswer);
+
+        var feedButton = document.querySelector("#feedback");
+        feedButton.addEventListener('click', openFeedbackPopup);
+
+        var closeButton = document.querySelector(".close");
+        closeButton.addEventListener('click', closeFeedbackPopup);
+
+        var nextPage = document.querySelector("#nextPage");
+
+
+        function InsertData(ttime, tscore) {
+            update(ref(db, "People/shreya6s"), {
+                Time: ttime,
+                Score: tscore
+            })
+                .then(() => {
+                    console.log("Data added successfully!")
+                })
+                .catch((error) => {
+                    alert(error)
+                });
+
+        }
+
+        function startTest() {
+            document.querySelector('.start-container').style.display = 'none';
+            document.querySelector('.title').style.display = 'flex';
+            document.querySelector('.question-container').style.display = 'block';
+            // Call the function to generate the first question
+            generateQuestion();
+        }
+
+
+
+        async function showEndPage() {
+            let formattedTotalTime
+            let totalScore
+            // Hide question container and show end page
+            document.querySelector('.question-container').style.display = 'none';
+            document.getElementById('endPage').style.display = 'block';
+            document.querySelector('.title').style.display = 'none';
+
+            throwConfetti();
+
+            // Fetch final score and display it
+            await fetch('/final_score')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('finalScore').innerText = data.final_score;
+                    totalScore = data.final_score
+                })
+                .catch(error => console.error('Error:', error));
+
+            // Fetch total time and format it as minutes:seconds
+            await fetch('/stop_timer')
+                .then(response => response.json())
+                .then(data => {
+                    let totalTimeSeconds = data.total_time_seconds;
+                    let minutes = Math.floor(totalTimeSeconds / 60);
+                    let seconds = totalTimeSeconds % 60;
+                    formattedTotalTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    // Set the formatted total time to the corresponding HTML element
+                    document.getElementById('totalTime').innerText = formattedTotalTime;
+                })
+                .catch(error => console.error('Error:', error));
+            analyseScores();
+            InsertData(formattedTotalTime, totalScore);
+        }
+
+        //to record answer when record button is clicked
+        function recordAnswer() {
+            document.getElementById('feedback').innerText = '';                  //first clear feedback box coz it may have something in some cases
+            var recognition = new webkitSpeechRecognition();
+            recognition.onresult = function (event) {                             //speech recognition function
+                var transcript = event.results[0][0].transcript;                 //getting the transcript of audio i.e storing the text of audio in transcript 
+                document.getElementById('userAnswer').value = transcript;        //set the user answer box with the transcript
+                evaluateAnswer(transcript);                                      //evaluating the transcript
+            };
+            recognition.start();
+
+            // Set a timeout to handle cases where no speech is detected
+            setTimeout(function () {
+                recognition.stop();
+                if (document.getElementById('userAnswer').value === '') {                 // if the box has no content i.e it is empty
+                    document.getElementById('feedback').innerText = "Sorry, couldn't hear anything. Try again";
+                    document.getElementById('nextButton').style.display = 'block';         // Show next button
+                    document.getElementById('recordButton').disabled = false;        //enable record button
+                } else {
+                    document.getElementById('recordButton').disabled = true;         // Disable record button if answer is provided
+                }
+            }, 13000);      // 13 seconds timeout-within 10 seconds if nothing appears in the feedback box, then display the message
+        }
+
+        function evaluateAnswer(userAnswer) {
+
+            // If there is a user answer, proceed with the evaluation
+            fetch('/evaluate_answer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_answer: userAnswer })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('feedback').innerText = `Feedback: ${data.feedback}, Score: ${data.score}`;
+                    score[k++]=data.mark;
+                    document.getElementById('nextButton').style.display = 'block'; // Show next button
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function nextQuestion() {
+            questionIndex++;
+            let userAnswer = document.getElementById('userAnswer').value.trim(); // Get user's answer and remove leading/trailing whitespace
+    
+            // Check if the user entered a response or not
+            if (userAnswer === '') {
+                // If the user did not enter a response, set the mark to 0 in the score[] array
+                score[k++] = 0;
+            }
+            console.log(k,score);
+            document.getElementById('userAnswer').value = ''; // Clear user answer textarea
+            document.getElementById('feedback').innerText = '';  //Clear feedback area
+            document.getElementById('nextButton').disabled = true; // Disable next button until the next question is generated
+            generateQuestion();
+        }
+
+        function generateQuestion() {
+            fetch('/generate_question')
+                .then(response => response.json())
+                .then(data => {
+                    // Check if quiz is completed after generating each question
+                    if (questionIndex > 5) {
+                        showEndPage(); // Show end page if quiz is completed
+                        return;
+                    }
+                    document.getElementById('recordButton').disabled = false;
+                    document.getElementById('feedback').innerText = '';
+                    document.getElementById('questionNumber').innerText = `${questionIndex}/5`;
+                    document.getElementById('question').innerText = data.question;
+                    document.getElementById('questionAudio').src = `/question_audio?${Date.now()}`;
+                    document.getElementById('questionAudio').play();
+                    startTime = Date.now(); // Reset timer
+                    startTimer(); // Start timer for 45 seconds
+                    document.getElementById('nextButton').disabled = false; // Enable next button after generating the question
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function startTimer() {
+            let timerElement = document.getElementById('timer');
+            let duration = 45; // Time duration in seconds
+            let timerInterval = setInterval(function () {
+                let elapsed = Math.floor((Date.now() - startTime) / 1000);
+                let remainingSeconds = duration - elapsed;
+                let minutes = Math.floor(remainingSeconds / 60);
+                let seconds = remainingSeconds % 60;
+
+                let formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}s`;
+
+                if (remainingSeconds < 0) {
+                    clearInterval(timerInterval);
+                    // Prevent automatic nextQuestion() call
+                    // Instead, display a message to prompt user action
+                    document.getElementById('feedback').innerText = 'Time elapsed! Click Next to proceed.';
+                } else {
+                    timerElement.innerText = formattedTime;
+                }
+            }, 1000);
+        }
+
+        function openFeedbackPopup() {
+            document.getElementById("feedbackPopup").style.display = "block";
+            // Set the content of the popup box
+            document.getElementById("feedbackPopupContent").innerHTML = document.getElementById("feedback").innerHTML;
+        }
+
+        function closeFeedbackPopup() {
+            document.getElementById("feedbackPopup").style.display = "none";
+        }
+
+        function analyseScores(){
+            for (let i=0;i<5;i++){
+                if (score[i]<2){
+                    improve[t++]=str[i];
+                }
+            } 
+            fetch('/improve_subjects', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ improve: improve })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Display personalized feedback message on the end page
+                document.getElementById('personalizedFeedback').innerText = data.personalized_feedback;
+                document.getElementById('endPage').style.display = 'block';
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function throwConfetti() {
+            (function frame() {
+                // launch a few confetti from the left edge
+                confetti({
+                    particleCount: 150,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 }
+                });
+                // and launch a few from the right edge
+                confetti({
+                    particleCount: 150,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 }
+                });
+            }());
+        }
+    </script>
+</body>
+
+</html>
