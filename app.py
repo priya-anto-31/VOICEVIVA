@@ -17,9 +17,9 @@ def index():
     return render_template('index1.html')
 
 # Define API keys and global variables
-api_key = 'AIzaSyAusVq_0b5B8laeNp_qDn3O2s59EnlnlQU'
-api_key2 = 'AIzaSyCQNaWx9gQfHY1jK0avBb-ZbXhxLTz5CJM'
-api_secret = 'AIzaSyAusVq_0b5B8laeNp_qDn3O2s59EnlnlQU'
+api_key = 'YOUR_API_KEY'
+api_key2 = 'YOUR_API_KEY'
+api_secret = 'YOUR_API_KEY'
 current_question_index = 0
 questions = []
 user_answers = []
