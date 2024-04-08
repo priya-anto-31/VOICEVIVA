@@ -1,0 +1,75 @@
+body, html {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #64485c;
+}
+
+.cont {
+    width: 100%;
+    height: 100%;
+}
+
+.leaderBoard {
+    margin: 20px;
+    color: black;
+    border: 1px;
+    border-radius: 10px;
+    background-color: rgba(5, 6, 11, 0.35);
+    padding: 10px;
+}
+
+.tableRows{
+    height: 420px; /* set a fixed height for the div */
+    overflow-y: scroll;
+}
+
+.topThree {
+    display: flex;
+    justify-content: center;
+    margin-top: 50px;
+}
+
+.table {
+    width: 100%;
+}
+
+.header{
+    display: flex;
+    justify-content: space-evenly;
+    border: 1px;
+    margin-bottom: 10px; 
+    color: white;
+}
+
+.row {
+    display: flex;
+    justify-content: space-evenly;
+    border: 1px;
+    margin-bottom: 30px; 
+    border-radius: 12px;
+}
+
+.row:nth-child(odd) {
+    background-color:rgba(255, 255, 255, 0.62); /* Set background color for odd rows */
+}
+.row:nth-child(even) {
+    background-color: #ffffff5c;    /* Set background color for even rows */
+}
+
+.cell {
+    width: 100px; /* Adjust the width as needed */
+    padding: 10px;
+    text-align: center;
+}
+
+.header .cell {
+    font-weight: bold;
+}
+
+.badge{
+    height: 20px;
+    width: 20px;
+}
