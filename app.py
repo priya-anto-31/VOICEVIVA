@@ -1,5 +1,5 @@
 # Import necessary libraries
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file , redirect, url_for
 import requests
 import speech_recognition as sr
 import pyttsx3
@@ -14,17 +14,17 @@ generating_question = False
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index1.html')
 
 # Define API keys and global variables
-api_key = 'YOUR_API_KEY'
-api_key2 = 'YOUR_API_KEY'
-api_secret = 'YOUR_API_KEY'
+api_key = 'AIzaSyAusVq_0b5B8laeNp_qDn3O2s59EnlnlQU'
+api_key2 = 'AIzaSyCQNaWx9gQfHY1jK0avBb-ZbXhxLTz5CJM'
+api_secret = 'AIzaSyAusVq_0b5B8laeNp_qDn3O2s59EnlnlQU'
 current_question_index = 0
 questions = []
 user_answers = []
 x=''
-str=['arrays','linked lists','stacks','trees','graphs','queues','hashing','heaps','algorithm analysis','advanced data structures']
+str=['arrays','linked lists','stacks and queues','trees and graphs','hashing and heaps']
 diff=['easy','medium','hard']
 
 # Store the start time of the quiz
@@ -59,7 +59,7 @@ def generate_question():
     # Start the timer when the quiz begins
     if quiz_start_time is None:
         quiz_start_time = time.time()  # Record the current time as the start time of the quiz
-    if not generating_question and current_question_index < 10:
+    if not generating_question and current_question_index < 5:
         generating_question = True
         if 'k' not in globals():
             k = 0  
@@ -119,21 +119,23 @@ def evaluate_answer():
 
     if 'sum' not in globals():
         sum = 0
-        
+        mark=0
+       
     for x in score:              #extracting the first digit bcoz that will be the score
         if x.isdigit():
             break    
+
     sum+=int(x)
     mark=int(x)
     print(mark)
     adjust_difficulty()
-    return jsonify({'feedback': feedback, 'score': score})
+    return jsonify({'feedback': feedback, 'score': score, 'mark': mark})
 
 # Route to fetch question audio
 @app.route('/question_audio')
 def question_audio():
     global current_question_index
-    if current_question_index <= 10:
+    if current_question_index <= 5:
         question_audio_path = f'static/question_{current_question_index}.mp3'
         if os.path.exists(question_audio_path):
             return send_file(question_audio_path, as_attachment=True)
@@ -150,6 +152,25 @@ def receive_audio():
         audio_data = recognizer.record(source)
         user_answer = recognizer.recognize_google(audio_data)
     return jsonify({'user_answer': user_answer})
+
+# Route to receive subjects that need improvement and generate personalized feedback
+@app.route('/improve_subjects', methods=['POST'])
+def improve_subjects():
+    data = request.get_json()
+    improve = data.get('improve', [])
+
+    personalized_feedback = []
+    # Loop through the subjects that need improvement and generate personalized feedback for each subject
+    for subject in improve:
+        prompt = f"Provide a small personalized feedback on how to improve in {subject}"
+        feedback_response = make_gemini_request(prompt)
+        if feedback_response and 'candidates' in feedback_response:
+            feedback_text = feedback_response['candidates'][0]['content']['parts'][0]['text']
+            personalized_feedback.append(feedback_text)
+
+    # Combine all personalized feedback messages into a single string
+    combined_feedback = '\n'.join(personalized_feedback)
+    return jsonify({'personalized_feedback': combined_feedback})
 
 # Route to calculate final score
 @app.route('/final_score')
@@ -180,6 +201,10 @@ def stop_timer():
         return jsonify({'total_time_seconds': total_time_seconds})
     else:
         return jsonify({'error': 'Timer not started'})
+
+@app.route('/leaderBoard')
+def leader():
+    return render_template('leaderBoard.html')
 
 # Run the Flask app
 if __name__ == '__main__':
