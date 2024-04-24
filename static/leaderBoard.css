@@ -73,3 +73,45 @@ body {
     height: 20px;
     width: 20px;
 }
+
+.row.highlight {
+    background-color: rgb(26 200 215 / 83%);
+    color: white;
+}
+
+.animation {
+    animation: slideIn 0.5s ease forwards;
+    opacity: 0;
+}
+
+@keyframes slideIn {
+    0% {
+        transform: translateY(100px); /* Start from above the initial position */
+        opacity: 0;
+    }
+    50% {
+        transform: translateY(0); /* Bounce off */
+    }
+    60% {
+        transform: translateY(5px); /* Bounce slightly */
+    }
+    100% {
+        transform: translateY(0); /* Settle down */
+        opacity: 1;
+    }
+}
+
+.leaderBoard {
+    animation: fadeIn 1s ease forwards; /* Apply the animation */
+    opacity: 0; /* Set initial opacity to 0 */
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0; /* Start with opacity 0 */
+    }
+    100% {
+        opacity: 1; /* Fade in to full opacity */
+    }
+}
+
