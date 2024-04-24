@@ -5,6 +5,7 @@ import speech_recognition as sr
 import pyttsx3
 import os
 import time
+import answerChecking
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -65,7 +66,7 @@ def generate_question():
             k = 0  
             d = 0
         try:
-            question_response = make_gemini_request("Ask an "+diff[d]+" question(without answer) about data structures only from the topic "+str[k])
+            question_response = make_gemini_request("Ask an "+diff[d]+" question(without answer) about data structures(don't ask time complexity questions) only from the topic "+str[k])
             print(str[k],diff[d])
             k += 1
             try:
@@ -108,28 +109,48 @@ def evaluate_answer():
  
     evaluation_response = make_gemini_request(f"Evaluate the correctness of following answer: {user_answer} for the question: {questions[current_question_index - 1]}. Provide the correct answer for the {questions[current_question_index - 1]}.")
     evaluation_score = make_gemini_request(f"Assign a score out of 5 for the following answer: {user_answer} to the question: {questions[current_question_index - 1]} based on its correctness")
+    g_answer = make_gemini_request(f"Generate a short answer for the question: {questions[current_question_index - 1]}")
 
     if not evaluation_response or 'candidates' not in evaluation_response:
         return jsonify({'error': 'Unable to evaluate answer'})
     if not evaluation_score or 'candidates' not in evaluation_score:
         return jsonify({'error': 'Unable to evaluate answer'})
-
+    if not g_answer or 'candidates' not in g_answer:
+        return jsonify({'error': 'Unable to evaluate answer'})
+    
     score = evaluation_score['candidates'][0]['content']['parts'][0]['text']
     feedback = evaluation_response['candidates'][0]['content']['parts'][0]['text']
+    gemini_answer = g_answer['candidates'][0]['content']['parts'][0]['text']
 
-    if 'sum' not in globals():
-        sum = 0
-        mark=0
+    keys= make_gemini_request(f"Extract keywords in the format 'keyword1 keyword2 etc' from the answer: '{gemini_answer}', needed by the question '{questions[current_question_index - 1]}'.")
+
+    if not keys or 'candidates' not in keys:
+        print("Error: Unable to evaluate answer.")
+            
+    keywords = keys['candidates'][0]['content']['parts'][0]['text']
+
+    score1 = answerChecking.paraphrase_detection(gemini_answer, user_answer)
+    score2 = answerChecking.related_words_coverage(gemini_answer, user_answer)
+    score3 = answerChecking.keyword_check(user_answer, keywords)
+
+    notFinal_score = (score1 + score2 + score3) / 3
+    out_of_5_score = notFinal_score * 5 
+    final_score = round(out_of_5_score, 2)
+
+
+    # if 'sum' not in globals():
+    #     sum = 0
+    #     mark=0
        
-    for x in score:              #extracting the first digit bcoz that will be the score
-        if x.isdigit():
-            break    
+    # for x in score:              #extracting the first digit bcoz that will be the score
+    #     if x.isdigit():
+    #         break    
 
-    sum+=int(x)
-    mark=int(x)
+    # sum+=int(x)
+    mark=final_score
     print(mark)
     adjust_difficulty()
-    return jsonify({'feedback': feedback, 'score': score, 'mark': mark})
+    return jsonify({'feedback': feedback, 'score': final_score, 'mark': mark})
 
 # Route to fetch question audio
 @app.route('/question_audio')
@@ -175,8 +196,8 @@ def improve_subjects():
 # Route to calculate final score
 @app.route('/final_score')
 def calculate_final_score():
-    global sum, quiz_start_time
-    final_score = sum if 'sum' in globals() else 0
+    global mark, quiz_start_time
+    final_score = mark if 'mark' in globals() else 0
     return jsonify({'final_score': final_score})
 
 # Add a route to start the timer when the quiz starts
