@@ -17,8 +17,8 @@
 <body>
     <div class="cont">
         <div class="topThree">
+            <h1 style="color:white;">LEADERBOARD</h1>
         </div>
-
         <div class="leaderBoard">
             <div class="table">
                 <div class="header">
@@ -85,7 +85,10 @@
                     else if (i == '4')
                         badgeImages = `<img src="{{ url_for('static', filename='pics/badge4.png') }}" alt="Badge 4" class="badge">`;
 
-
+                    if (user.Username == 'shreya6s') {
+                        row.classList.add("highlight");
+                    }
+                    row.classList.add("animation");
 
                     row.innerHTML = `
             <div class="cell">${rank}</div>
