@@ -27,7 +27,7 @@ generating_question = False
 
 
 # Define API keys and global variables
-ss_api = 'GEMINI_API_KEY'
+ss_api = 'YOUR_API_KEY'
 current_question_index = 0
 questions = []
 questions_order=[]
