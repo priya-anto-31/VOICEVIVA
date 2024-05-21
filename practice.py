@@ -12,7 +12,7 @@ import answerChecking
 
 practice_bp = Blueprint('practice', __name__)
 
-practice_bp.secret_key = 'shreya12346v34jdmswi32bkdsunil'
+practice_bp.secret_key = 'PRACTICE_SECRET_KEY'
 
 
 num_questions = 10  # Set the number of questions needed
@@ -27,7 +27,7 @@ generating_question = False
 
 
 # Define API keys and global variables
-ss_api = 'AIzaSyCwa1xztfhyh0knFxWeIScIT2YdsHZQxkg'
+ss_api = 'GEMINI_API_KEY'
 current_question_index = 0
 questions = []
 questions_order=[]
