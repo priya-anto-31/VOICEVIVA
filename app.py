@@ -12,7 +12,7 @@ import os
 # Initialize Flask app
 app = Flask(__name__)
 
-app.secret_key = 'shreya12346v34jdmswi32bkdsunil'
+app.secret_key = 'APP_SECRET_KEY'
 
 # Define a flag to control question generation
 generating_question = False
