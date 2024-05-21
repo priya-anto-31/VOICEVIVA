@@ -47,3 +47,10 @@ Follow these steps to set up the project locally:
     ```
     Open your browser and go to `http://127.0.0.1:5000` to start using VoiceVIVA.
 
+## Contributing 🤝
+
+We welcome contributions from the community! If you encounter any bugs or have suggestions for improvements, feel free to open an issue or submit a pull request.
+
+---
+
+*Happy Learning with VoiceVIVA!* 🌟
