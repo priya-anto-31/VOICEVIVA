@@ -14,7 +14,7 @@ def test():
     return render_template('index1.html', email=email)
 
 
-test_bp.secret_key = 'shreya12346v34jdmswi32bkdsunil'
+test_bp.secret_key = 'TEST_SECRET_KEY'
 
 # Define a flag to control question generation
 generating_question = False
@@ -29,7 +29,7 @@ def leaderboard():
 api_key = 'YOUR_API_KEY'
 api_key2 = 'YOUR_API_KEY'
 api_secret = 'YOUR_API_KEY'
-ss_api = 'AIzaSyCwa1xztfhyh0knFxWeIScIT2YdsHZQxkg'
+ss_api = 'YOUR_API_KEY'
 current_question_index = 0
 questions = []
 question_answers = [[] for _ in range(5)]  
